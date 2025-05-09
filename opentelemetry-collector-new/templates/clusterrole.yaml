@@ -5,15 +5,13 @@ metadata:
   name: {{ include "opentelemetry-collector.clusterRoleName" . }}
   labels:
     {{- include "opentelemetry-collector.labels" . | nindent 4 }}
-  {{- if .Values.clusterRole.annotations }}
+  {{- with .Values.clusterRole.annotations }}
   annotations:
-    {{- range $key, $value := .Values.clusterRole.annotations }}
-    {{- printf "%s: %s" $key (tpl $value $ | quote) | nindent 4 }}
-    {{- end }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 rules:
-  {{- if .Values.clusterRole.rules -}}
-  {{ toYaml .Values.clusterRole.rules | nindent 2 -}}
+  {{- if .Values.clusterRole.rules }}
+  {{- toYaml .Values.clusterRole.rules | nindent 2 }}
   {{- end }}
   {{- if .Values.presets.kubernetesAttributes.enabled}}
   - apiGroups: [""]
@@ -28,7 +26,7 @@ rules:
   {{- end }}
   {{- if .Values.presets.clusterMetrics.enabled}}
   - apiGroups: [""]
-    resources: ["events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services" ]
+    resources: ["events", "namespaces", "namespaces/status", "nodes", "nodes/spec", "pods", "pods/status", "replicationcontrollers", "replicationcontrollers/status", "resourcequotas", "services"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["apps"]
     resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
