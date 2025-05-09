@@ -1,46 +1,20 @@
-# Correct values.yaml configuration for OpenTelemetry Collector
-
-# Remove the root-level clusterRoleBinding and nest it under clusterRole
-clusterRole:
-  # Specifies whether a clusterRole should be created
-  create: false
-  
-  # Annotations to add to the clusterRole
-  annotations: {}
-  
-  # The name of the clusterRole to use
-  name: ""
-  
-  # RBAC rules
-  rules: []
-  
-  # ClusterRoleBinding configuration (moved from root level)
-  clusterRoleBinding:
-    # Annotations to add to the clusterRoleBinding
-    annotations: {}
-    
-    # The name of the clusterRoleBinding to use
-    name: ""
-
-# Rest of your configuration...
-presets:
-  logsCollection:
-    enabled: false
-  hostMetrics:
-    enabled: false
-  kubernetesAttributes:
-    enabled: false
-  kubeletMetrics:
-    enabled: false
-  kubernetesEvents:
-    enabled: false
-  clusterMetrics:
-    enabled: false
-
-# Other required configurations...
-serviceAccount:
-  create: true
-  annotations: {}
-  name: ""
-
-# ... rest of your values.yaml
+{{- if or (.Values.clusterRole.create) (.Values.presets.kubernetesAttributes.enabled) (.Values.presets.clusterMetrics.enabled) (.Values.presets.kubeletMetrics.enabled) (.Values.presets.kubernetesEvents.enabled) -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "opentelemetry-collector.clusterRoleBindingName" . }}
+  labels:
+    {{- include "opentelemetry-collector.labels" . | nindent 4 }}
+  {{- with .Values.clusterRole.binding.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "opentelemetry-collector.clusterRoleName" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "opentelemetry-collector.serviceAccountName" . }}
+  namespace: {{ include "opentelemetry-collector.namespace" . }}
+{{- end }}
