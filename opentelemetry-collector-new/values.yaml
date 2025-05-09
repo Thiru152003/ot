@@ -163,10 +163,10 @@ clusterRole:
   annotations: {}
   name: ""
   rules: []
-
-clusterRoleBinding:
-  annotations: {}
-  name: ""
+  # ClusterRoleBinding configuration moved here
+  binding:
+    annotations: {}
+    name: ""
 
 podSecurityContext: {}
 securityContext: {}
