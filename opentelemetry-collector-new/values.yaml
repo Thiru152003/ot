@@ -159,7 +159,7 @@ serviceAccount:
   name: ""
 
 clusterRole:
-  create: false
+  create: true
   annotations: {}
   name: ""
   rules: []
