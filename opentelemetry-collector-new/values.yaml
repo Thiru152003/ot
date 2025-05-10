@@ -160,11 +160,13 @@ serviceAccount:
 
 clusterRole:
   create: true
-  annotations: {}
   name: ""
+  annotations: {}
   rules: []
   clusterRoleBinding:
     name: otel-collector-binding
+  binding:
+    annotations: {}
 
 podSecurityContext: {}
 securityContext: {}
