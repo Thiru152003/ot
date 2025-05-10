@@ -165,8 +165,7 @@ clusterRole:
   rules: []
   clusterRoleBinding:
     name: otel-collector-binding
-  binding:
-    annotations: {}
+  # Removed binding as it's not allowed in the schema
 
 podSecurityContext: {}
 securityContext: {}
