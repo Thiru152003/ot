@@ -163,6 +163,8 @@ clusterRole:
   annotations: {}
   name: ""
   rules: []
+  clusterRoleBinding:
+    name: otel-collector-binding
 
 podSecurityContext: {}
 securityContext: {}
