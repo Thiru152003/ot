@@ -1,67 +1,10 @@
-# Default values for opentelemetry-collector.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
+mode: "deployment"
 nameOverride: ""
 fullnameOverride: ""
-
-# Valid values are "daemonset", "deployment", and "statefulset".
-mode: "deployment"
-
-# Specify which namespace should be used to deploy the resources into
-namespaceOverride: ""
-
-# Handles basic configuration of components that
-# also require k8s modifications to work correctly.
-presets:
-  # Configures the collector to collect logs.
-  logsCollection:
-    enabled: false
-    includeCollectorLogs: false
-    storeCheckpoints: false
-    maxRecombineLogSize: 102400
-
-  # Configures the collector to collect host metrics.
-  hostMetrics:
-    enabled: false
-
-  # Configures the Kubernetes Processor to add Kubernetes metadata.
-  kubernetesAttributes:
-    enabled: false
-    extractAllPodLabels: false
-    extractAllPodAnnotations: false
-
-  # Configures the collector to collect node, pod, and container metrics from the API server on a kubelet.
-  kubeletMetrics:
-    enabled: false
-
-  # Configures the collector to collect kubernetes events.
-  kubernetesEvents:
-    enabled: false
-
-  # Configures the Kubernetes Cluster Receiver to collect cluster-level metrics.
-  clusterMetrics:
-    enabled: false
 
 configMap:
   create: true
   existingName: ""
-
-internalTelemetryViaOTLP:
-  endpoint: ""
-  headers: []
-  traces:
-    enabled: false
-    endpoint: ""
-    headers: []
-  metrics:
-    enabled: false
-    endpoint: ""
-    headers: []
-  logs:
-    enabled: false
-    endpoint: ""
-    headers: []
 
 config:
   exporters:
@@ -104,84 +47,54 @@ config:
     telemetry:
       metrics:
         readers:
-        - pull:
-            exporter:
-              prometheus:
-                host: ${env:MY_POD_IP}
-                port: 8888
+          - pull:
+              exporter:
+                prometheus:
+                  host: ${env:MY_POD_IP}
+                  port: 8888
     extensions:
-    - health_check
+      - health_check
     pipelines:
       logs:
-        exporters:
-        - debug
-        processors:
-        - memory_limiter
-        - batch
-        receivers:
-        - otlp
+        receivers: [otlp]
+        processors: [memory_limiter, batch]
+        exporters: [debug]
       metrics:
-        exporters:
-        - debug
-        processors:
-        - memory_limiter
-        - batch
-        receivers:
-        - otlp
-        - prometheus
+        receivers: [otlp, prometheus]
+        processors: [memory_limiter, batch]
+        exporters: [debug]
       traces:
-        exporters:
-        - debug
-        processors:
-        - memory_limiter
-        - batch
-        receivers:
-        - otlp
-        - jaeger
-        - zipkin
-
-alternateConfig: {}
+        receivers: [otlp, jaeger, zipkin]
+        processors: [memory_limiter, batch]
+        exporters: [debug]
 
 image:
-  repository: "otel/opentelemetry-collector"
+  repository: otel/opentelemetry-collector
+  tag: "0.94.0"
   pullPolicy: IfNotPresent
-  tag: ""
-  digest: ""
-imagePullSecrets: []
+
+resources:
+  limits:
+    memory: 512Mi
+    cpu: 500m
+  requests:
+    memory: 256Mi
+    cpu: 250m
 
 command:
-  name: "otelcol"
-  extraArgs: []
+  name: otelcol
+  extraArgs:
+    - "--config=/conf/relay.yaml"
 
 serviceAccount:
   create: true
-  annotations: {}
   name: ""
 
 clusterRole:
-  create: true
+  create: false  # set to true only if using k8s processors
   name: ""
-  annotations: {}
-  rules: []
   clusterRoleBinding:
     name: otel-collector-binding
-  # Removed binding as it's not allowed in the schema
-  
-podSecurityContext: {}
-securityContext: {}
-
-nodeSelector: {}
-tolerations: []
-affinity: {}
-topologySpreadConstraints: []
-
-priorityClassName: ""
-
-extraEnvs: []
-extraEnvsFrom: []
-extraVolumes: []
-extraVolumeMounts: []
-extraManifests: []
 
 ports:
   otlp:
@@ -190,7 +103,6 @@ ports:
     servicePort: 4317
     hostPort: 4317
     protocol: TCP
-    appProtocol: grpc
   otlp-http:
     enabled: true
     containerPort: 4318
@@ -222,34 +134,12 @@ ports:
     hostPort: 9411
     protocol: TCP
   metrics:
-    enabled: false
+    enabled: true
     containerPort: 8888
     servicePort: 8888
     protocol: TCP
 
-useGOMEMLIMIT: true
-
-resources: {}
-
-podAnnotations: {}
-podLabels: {}
-additionalLabels: {}
-
-hostNetwork: false
-hostAliases: []
-dnsPolicy: ""
-dnsConfig: {}
-schedulerName: ""
-
 replicaCount: 1
-revisionHistoryLimit: 10
-
-annotations: {}
-
-extraContainers: []
-initContainers: []
-
-lifecycleHooks: {}
 
 livenessProbe:
   httpGet:
@@ -260,64 +150,3 @@ readinessProbe:
   httpGet:
     port: 13133
     path: /
-
-startupProbe: {}
-
-service:
-  type: ClusterIP
-  annotations: {}
-
-ingress:
-  enabled: false
-  additionalIngresses: []
-
-podMonitor:
-  enabled: false
-  metricsEndpoints:
-  - port: metrics
-  extraLabels: {}
-
-serviceMonitor:
-  enabled: false
-  metricsEndpoints:
-  - port: metrics
-  extraLabels: {}
-  relabelings: []
-  metricRelabelings: []
-
-podDisruptionBudget:
-  enabled: false
-
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 10
-  behavior: {}
-  targetCPUUtilizationPercentage: 80
-
-rollout:
-  strategy: RollingUpdate
-
-prometheusRule:
-  enabled: false
-  groups: []
-  defaultRules:
-    enabled: false
-  extraLabels: {}
-
-statefulset:
-  volumeClaimTemplates: []
-  podManagementPolicy: "Parallel"
-  persistentVolumeClaimRetentionPolicy:
-    enabled: false
-    whenDeleted: Retain
-    whenScaled: Retain
-
-networkPolicy:
-  enabled: false
-  annotations: {}
-  allowIngressFrom: []
-  extraIngressRules: []
-  egressRules: []
-
-shareProcessNamespace: false
