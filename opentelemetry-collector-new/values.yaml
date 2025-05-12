@@ -188,5 +188,8 @@ prometheusRule:
 # ✅ Fix: Add this podMonitor block
 podMonitor:
   enabled: false
-  metricsEndpoints: []
+  metricsEndpoints:
+    - port: metrics
+      interval: 10s
+      path: /metrics
   extraLabels: {}
