@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opentelemetry-collector
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+    chart: opentelemetry-collector
+    targetRevision: 0.94.0
+    helm:
+      parameters:
+        - name: image.repository
+          value: otel/opentelemetry-collector
+        - name: image.tag
+          value: "0.94.0"
+        - name: mode
+          value: deployment
+        - name: resources.limits.memory
+          value: "512Mi"
+        - name: resources.limits.cpu
+          value: "500m"
+        - name: resources.requests.memory
+          value: "256Mi"
+        - name: resources.requests.cpu
+          value: "250m"
+        - name: extraArgs
+          value: "{--config=/conf/relay.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: otel
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
