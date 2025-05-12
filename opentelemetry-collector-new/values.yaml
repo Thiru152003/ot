@@ -1,6 +1,27 @@
 mode: "deployment"
+
 nameOverride: ""
 fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  repository: otel/opentelemetry-collector
+  tag: "0.94.0"
+  pullPolicy: IfNotPresent
+
+command:
+  name: otelcol
+  extraArgs:
+    - "--config=/conf/relay.yaml"
+
+resources:
+  limits:
+    memory: 512Mi
+    cpu: 500m
+  requests:
+    memory: 256Mi
+    cpu: 250m
 
 configMap:
   create: true
@@ -39,8 +60,8 @@ config:
         - job_name: opentelemetry-collector
           scrape_interval: 10s
           static_configs:
-          - targets:
-            - ${env:MY_POD_IP}:8888
+            - targets:
+              - ${env:MY_POD_IP}:8888
     zipkin:
       endpoint: ${env:MY_POD_IP}:9411
   service:
@@ -68,78 +89,69 @@ config:
         processors: [memory_limiter, batch]
         exporters: [debug]
 
-image:
-  repository: otel/opentelemetry-collector
-  tag: "0.94.0"
-  pullPolicy: IfNotPresent
-
-resources:
-  limits:
-    memory: 512Mi
-    cpu: 500m
-  requests:
-    memory: 256Mi
-    cpu: 250m
-
-command:
-  name: otelcol
-  extraArgs:
-    - "--config=/conf/relay.yaml"
-
-serviceAccount:
-  create: true
-  name: ""
-
-clusterRole:
-  create: false  # set to true only if using k8s processors
-  name: ""
-  clusterRoleBinding:
-    name: otel-collector-binding
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: otlp
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+    - name: jaeger-compact
+      port: 6831
+      targetPort: 6831
+      protocol: UDP
+    - name: jaeger-thrift
+      port: 14268
+      targetPort: 14268
+    - name: jaeger-grpc
+      port: 14250
+      targetPort: 14250
+    - name: zipkin
+      port: 9411
+      targetPort: 9411
+    - name: metrics
+      port: 8888
+      targetPort: 8888
 
 ports:
   otlp:
     enabled: true
     containerPort: 4317
     servicePort: 4317
-    hostPort: 4317
     protocol: TCP
   otlp-http:
     enabled: true
     containerPort: 4318
     servicePort: 4318
-    hostPort: 4318
     protocol: TCP
   jaeger-compact:
     enabled: true
     containerPort: 6831
     servicePort: 6831
-    hostPort: 6831
     protocol: UDP
   jaeger-thrift:
     enabled: true
     containerPort: 14268
     servicePort: 14268
-    hostPort: 14268
     protocol: TCP
   jaeger-grpc:
     enabled: true
     containerPort: 14250
     servicePort: 14250
-    hostPort: 14250
     protocol: TCP
   zipkin:
     enabled: true
     containerPort: 9411
     servicePort: 9411
-    hostPort: 9411
     protocol: TCP
   metrics:
     enabled: true
     containerPort: 8888
     servicePort: 8888
     protocol: TCP
-
-replicaCount: 1
 
 livenessProbe:
   httpGet:
@@ -150,3 +162,20 @@ readinessProbe:
   httpGet:
     port: 13133
     path: /
+
+serviceAccount:
+  create: true
+  name: ""
+
+clusterRole:
+  create: false
+  name: ""
+  clusterRoleBinding:
+    name: otel-collector-binding
+
+serviceMonitor:
+  enabled: true
+  interval: 10s
+  scrapeTimeout: 10s
+  labels:
+    release: prometheus
