@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "opentelemetry-collector.clusterRoleName" . }}
+  name: {{ default (include "opentelemetry-collector.fullname" .) .Values.clusterRole.name }}
   labels:
     {{- include "opentelemetry-collector.labels" . | nindent 4 }}
   {{- with .Values.clusterRole.annotations }}
@@ -13,9 +13,17 @@ rules:
   {{- if .Values.clusterRole.rules }}
   {{- toYaml .Values.clusterRole.rules | nindent 2 }}
   {{- else }}
-  # Minimal example rule - allows reading namespaces (safe default)
   - apiGroups: [""]
-    resources: ["namespaces"]
+    resources: ["pods", "nodes", "namespaces", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["events.k8s.io"]
+    resources: ["events"]
     verbs: ["get", "list", "watch"]
   {{- end }}
 {{- end }}
