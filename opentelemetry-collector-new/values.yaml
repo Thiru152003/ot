@@ -89,7 +89,7 @@ config:
         processors: [memory_limiter, batch]
         exporters: [debug]
 
-# Remove the ports section here as it's causing an invalid spec error
+# Removed invalid 'ports' section and fixed the service configuration.
 service:
   enabled: true
   type: ClusterIP
@@ -126,7 +126,7 @@ prometheusRule:
   labels: {}
   rules: []
 
-# ✅ Fix: Add this podMonitor block
+# ✅ Fix: Added podMonitor configuration
 podMonitor:
   enabled: false
   metricsEndpoints:
